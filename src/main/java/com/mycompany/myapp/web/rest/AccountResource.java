@@ -1,5 +1,29 @@
 package com.mycompany.myapp.web.rest;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import javax.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
+import javax.validation.Valid;
+
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.codahale.metrics.annotation.Timed;
 import com.mycompany.myapp.domain.Authority;
 import com.mycompany.myapp.domain.PersistentToken;
@@ -10,21 +34,6 @@ import com.mycompany.myapp.security.SecurityUtils;
 import com.mycompany.myapp.service.MailService;
 import com.mycompany.myapp.service.UserService;
 import com.mycompany.myapp.web.rest.dto.UserDTO;
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.validation.Valid;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * REST controller for managing the current user's account.
@@ -192,5 +201,32 @@ public class AccountResource {
                 .filter(persistentToken -> StringUtils.equals(persistentToken.getSeries(), decodedSeries))
                 .findAny().ifPresent(t -> persistentTokenRepository.delete(decodedSeries));
         });
+    }
+
+    /**
+     * GET  /account/token -> get the token for current open sessions.
+     */
+    @RequestMapping(value = "/account/token",
+            method = RequestMethod.GET,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @Timed
+    public @ResponseBody String getToken() {
+		return getToken(SecurityUtils.getCurrentLogin());
+    }
+
+    private String getToken(String currentLogin) {
+//    	Optional<User> user = userRepository.findOneByLogin(currentLogin);
+    	String jwtUserToken = "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiIxLjEiLCJhdWQiOlsid2VBcGkiXSwidXNlcl9uYW1lIjoidXNlciIsInNjb3BlIjpbInJlYWQiLCJ3cml0ZSJdLCJpc3MiOiJwZSIsImV4cCI6MTQyNjE1OTIxOCwiaWF0IjoxNDI0MzU5MjE4LCJhdXRob3JpdGllcyI6WyJST0xFX1VTRVIiXSwianRpIjoiOWEwOTYxN2QtYjkzOC00ZGQyLThiYWEtYmE1MTI1N2IxNDc5IiwiY2xpZW50X2lkIjoid2VhcHAifQ.KeX4P2jIbf7dhuaq-b_k_vo9B7DqM3dC5VHkqaMh0yRWbDpLWcJj4RQg_I6tXsTzDjgYTA8Atq8myQ-ODVZB5-4jfTsab0iYy5XmfeGrz7jNwZDKQLbYY3PxP6Yvl1Da7IAmxhOUHlJlYns7z4-0yzZUhvshxJroGjFGhmj2vhqorwStlRZgqxAy5ajTZXBKdWURPDdWiTUKIYCYJw8Xe11RSLjWgquxBjuI3s5_-PfqMtX6UK87M6rpO4hpRdKKpAw-WHp5Sp0wbcqN9K8_Cuq4hoMlAa0N3PEkjhXdGMkHLKGHoR9UApGHjB0J0rN9TT2xS_Bbdt5XsAjwp6goOg";
+        String jwtAdminToken = "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiIxLjEiLCJhdWQiOlsid2VBcGkiXSwidXNlcl9uYW1lIjoiYWRtaW4iLCJzY29wZSI6WyJyZWFkIiwid3JpdGUiXSwiaXNzIjoicGUiLCJleHAiOjE0MjYxNTk0MTQsImlhdCI6MTQyNDM1OTQxNCwiYXV0aG9yaXRpZXMiOlsiUk9MRV9BRE1JTiIsIlJPTEVfVVNFUiJdLCJqdGkiOiI3NzUxNjM2Yi1lMGY0LTRmNWEtYWJmNy03NTMzNjUzZDJmYjIiLCJjbGllbnRfaWQiOiJ3ZWFwcCJ9.cV9GOgF-n9Ma6P1Zeh9l_i3Poha26orwebYnAFZAo91Q0y4gKqOEY3mVYkA6FkwLKCh93YvZY8-NMb9EORaVWLZsS7gdoLerGs1OdQhKrUJ7dEn0Fsc3R-lCr4YdsOEmZGuBebuowwvevaMd3SeVlKCbdVRQfpkzFuKWRA36lulw2RUdi3YwdjbQOTX00U7QaQWOoFbbj48C7OPtyHiSzFTZ7rxiqdhrcXzsWZBZ9ZbWVELhutgXarUZfTBypsYRreuYOksvhnhVBPxGXN9tM2yr-mgCrTexoYTZuErwQEjUxxfTT0OQBKBYqb-KGs5LdFHT3rYXMQFGuZI7i2QTtg";
+        String token = "{\"token\":\"";
+        if (StringUtils.equals(currentLogin, "user")) {
+        	token += jwtUserToken;
+        } else if (StringUtils.equals(currentLogin, "admin")) {
+        	token += jwtAdminToken;
+        } else {
+        	throw new IllegalStateException("login must be admin or user for now");
+        }
+      log.debug(token);
+    	return token + "\"}";
     }
 }

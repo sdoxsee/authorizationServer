@@ -4,7 +4,7 @@ angular.module('authorizationserverApp')
     .factory('AuditsService', function ($http) {
         return {
             findAll: function () {
-                return $http.get('api/audits/all').then(function (response) {
+                return $http.get('http://localhost:8081/api/audits/all').then(function (response) {
                     return response.data;
                 });
             },
@@ -17,7 +17,7 @@ angular.module('authorizationserverApp')
                     return dateToFormat;
                 };
 
-                return $http.get('api/audits/byDates', {params: {fromDate: formatDate(fromDate), toDate: formatDate(toDate)}}).then(function (response) {
+                return $http.get('http://localhost:8081/api/audits/byDates', {params: {fromDate: formatDate(fromDate), toDate: formatDate(toDate)}}).then(function (response) {
                     return response.data;
                 });
             }

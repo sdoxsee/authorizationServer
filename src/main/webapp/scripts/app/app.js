@@ -45,7 +45,23 @@ angular.module('authorizationserverApp', ['LocalStorageModule', 'tmh.dynamicLoca
             }
         };
     })
-    
+
+    .factory('authInterceptor', function ($rootScope, $q, $location, localStorageService) {
+        return {
+            // Add authorization token to headers
+            request: function (config) {
+                config.headers = config.headers || {};
+                var token = localStorageService.get('token');
+
+                if (token && token.expires_at && token.expires_at > new Date().getTime()) {
+                    config.headers.Authorization = 'Bearer ' + token.access_token;
+                }
+
+                return config;
+            }
+        };
+    })
+
     .config(function ($stateProvider, $urlRouterProvider, $httpProvider, $locationProvider, $translateProvider, tmhDynamicLocaleProvider, httpRequestInterceptorCacheBusterProvider) {
 
         //enable CSRF
@@ -65,11 +81,19 @@ angular.module('authorizationserverApp', ['LocalStorageModule', 'tmh.dynamicLoca
                 }
             },
             resolve: {
-                authorize: ['Auth',
-                    function (Auth) {
+                jwtToken: function (Auth) {
+                    return Auth.jwtToken();
+                },
+                authorize: ['jwtToken','Auth',
+                    function (jwtToken, Auth) {
                         return Auth.authorize();
                     }
                 ],
+                // authorize: ['Auth',
+                //     function (Auth) {
+                //         return Auth.authorize();
+                //     }
+                // ],
                 translatePartialLoader: ['$translate', '$translatePartialLoader', function ($translate, $translatePartialLoader) {
                     $translatePartialLoader.addPart('global');
                     $translatePartialLoader.addPart('language');
@@ -77,7 +101,8 @@ angular.module('authorizationserverApp', ['LocalStorageModule', 'tmh.dynamicLoca
                 }]
             }
         });
-        
+
+        $httpProvider.interceptors.push('authInterceptor');
 
         // Initialize angular-translate
         $translateProvider.useLoader('$translatePartialLoader', {

@@ -1,18 +1,23 @@
 'use strict';
 
 angular.module('authorizationserverApp')
-    .factory('Auth', function Auth($rootScope, $state, $q, $translate, Principal, AuthServerProvider, Account, Register, Activate, Password) {
+    .factory('Auth', function Auth($rootScope, $state, $q, $translate, Principal, AuthServerProvider, Account, Register, Activate, Password, localStorageService, $http) {
         return {
             login: function (credentials, callback) {
                 var cb = callback || angular.noop;
                 var deferred = $q.defer();
 
+                var Auth = this;
+
                 AuthServerProvider.login(credentials).then(function (data) {
-                    // retrieve the logged account information
-                    Principal.identity(true).then(function(account) {
-                        // After the login the language will be changed to
-                        // the language selected by the user during his registration
-                        $translate.use(account.langKey);
+                    // get jwt token from PE, and set it in localStorage
+                    Auth.jwtToken().then(function(response) {
+                      // retrieve the logged account information from WE using jwt from PE
+                      Principal.identity(true).then(function(account) {
+                          // After the login the language will be changed to
+                          // the language selected by the user during his registration
+                          $translate.use(account.langKey);
+                      });
                     });
                     deferred.resolve(data);
 
@@ -98,6 +103,30 @@ angular.module('authorizationserverApp')
                 }, function (err) {
                     return cb(err);
                 }).$promise;
+            },
+
+            jwtToken: function () {
+              var deferred = $q.defer();
+              var token = localStorageService.get('token');
+              if (!token) {
+                $http.get('api/account/token').
+                  success(function(response) {
+                    var token = {};
+                    token.access_token = response.token;
+                    var decoded = jwt_decode(response.token);
+                    var expiredAt = new Date();
+                    expiredAt.setSeconds(expiredAt.getSeconds() + decoded.exp);
+                    token.expires_at = expiredAt.getTime();
+                    localStorageService.set('token', token);
+                    deferred.resolve();
+                  }).
+                  error(function(error) {
+                    deferred.resolve();
+                  });
+              } else {
+                deferred.resolve();
+              }
+              return deferred.promise;
             }
         };
     });

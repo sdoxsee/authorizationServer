@@ -12,7 +12,7 @@ angular.module('authorizationserverApp')
                         'Content-Type': 'application/x-www-form-urlencoded'
                     }
                 }).success(function (response) {
-                    localStorageService.set('token', $window.btoa(credentials.username + ':' + credentials.password));
+                    // localStorageService.set('token', $window.btoa(credentials.username + ':' + credentials.password));
                     return response;
                 });
             },
